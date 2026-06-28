@@ -1,0 +1,64 @@
+{
+  "schema_version": "agentcafe.diagnostic.v1",
+  "trace_id": "trace-fixture-no-runtime",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "runtimes": [
+    {
+      "runtime": "codex",
+      "display_name": "Codex",
+      "executable_path": null,
+      "version": "unknown",
+      "install_source": "unknown",
+      "path_status": "missing",
+      "status": "missing",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": [
+        {
+          "code": "runtime_not_found",
+          "message": "codex was not found on PATH or known install locations."
+        }
+      ]
+    },
+    {
+      "runtime": "claude",
+      "display_name": "Claude Code",
+      "executable_path": null,
+      "version": "unknown",
+      "install_source": "unknown",
+      "path_status": "missing",
+      "status": "missing",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": [
+        {
+          "code": "runtime_not_found",
+          "message": "claude was not found on PATH or known install locations."
+        }
+      ]
+    }
+  ],
+  "config_sources": [],
+  "plugins": [],
+  "skills": [],
+  "mcp_servers": [],
+  "hooks": [],
+  "conflicts": [],
+  "risk_findings": [],
+  "summary": {
+    "runtime_count": 0,
+    "config_source_count": 0,
+    "plugin_count": 0,
+    "skill_count": 0,
+    "mcp_server_count": 0,
+    "hook_count": 0,
+    "risk_count_by_severity": {
+      "info": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "overall_status": "missing",
+    "truncated": false
+  },
+  "redaction_notice": "Agent Cafe returns field names, counts, lengths, hashes, and redacted paths only. Secrets, prompts, transcripts, tool payloads, shell output, and nonce values are omitted."
+}

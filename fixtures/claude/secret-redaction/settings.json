@@ -1,0 +1,15 @@
+{
+  "model": "claude-sonnet-4",
+  "mcpServers": {
+    "internal-docs": {
+      "type": "http",
+      "url": "https://docs.example.invalid/mcp",
+      "headers": {
+        "Authorization": "AGENTCAFE_FIXTURE_SECRET_CLAUDE_AUTHORIZATION"
+      }
+    }
+  },
+  "env": {
+    "ANTHROPIC_API_KEY": "AGENTCAFE_FIXTURE_SECRET_CLAUDE_ENV_KEY"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": "agentcafe.diagnostic.v1",
+  "trace_id": "trace-fixture-claude-only",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "runtimes": [
+    {
+      "runtime": "codex",
+      "display_name": "Codex",
+      "executable_path": null,
+      "version": "unknown",
+      "install_source": "unknown",
+      "path_status": "missing",
+      "status": "missing",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": [
+        {
+          "code": "runtime_not_found",
+          "message": "codex was not found on PATH or known install locations."
+        }
+      ]
+    },
+    {
+      "runtime": "claude",
+      "display_name": "Claude Code",
+      "executable_path": "~/redacted/bin/claude",
+      "version": "1.0.56",
+      "install_source": "npm",
+      "path_status": "available",
+      "status": "available",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": []
+    }
+  ],
+  "config_sources": [
+    {
+      "id": "claude-user-settings",
+      "runtime": "claude",
+      "scope": "user",
+      "path": "~/redacted/.claude/settings.json",
+      "priority": 30,
+      "format": "json",
+      "read_policy": "read_whitelisted_fields",
+      "display_policy": "redacted_summary",
+      "write_policy": "mvp2_draft_only",
+      "validation_status": "valid",
+      "trust_status": "not_applicable",
+      "mvp_stage": "mvp1_read_only",
+      "source_reference": "https://docs.anthropic.com/en/docs/claude-code/settings"
+    }
+  ],
+  "plugins": [],
+  "skills": [
+    {
+      "id": "claude-user-skill-review",
+      "runtime": "claude",
+      "name": "review",
+      "description": "Review helper frontmatter summary.",
+      "scope": "user",
+      "path": "~/redacted/.claude/skills/review/SKILL.md",
+      "validation_status": "valid",
+      "referenced_resource_count": 2,
+      "risk_count": 0
+    }
+  ],
+  "mcp_servers": [],
+  "hooks": [],
+  "conflicts": [],
+  "risk_findings": [],
+  "summary": {
+    "runtime_count": 1,
+    "config_source_count": 1,
+    "plugin_count": 0,
+    "skill_count": 1,
+    "mcp_server_count": 0,
+    "hook_count": 0,
+    "risk_count_by_severity": {
+      "info": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "overall_status": "available",
+    "truncated": false
+  },
+  "redaction_notice": "Agent Cafe returns field names, counts, lengths, hashes, and redacted paths only. Secrets, prompts, transcripts, tool payloads, shell output, and nonce values are omitted."
+}

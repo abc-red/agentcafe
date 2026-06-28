@@ -1,0 +1,90 @@
+{
+  "schema_version": "agentcafe.diagnostic.v1",
+  "trace_id": "trace-fixture-codex-only",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "runtimes": [
+    {
+      "runtime": "codex",
+      "display_name": "Codex",
+      "executable_path": "~/redacted/bin/codex",
+      "version": "0.138.0",
+      "install_source": "npm",
+      "path_status": "available",
+      "status": "available",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": []
+    },
+    {
+      "runtime": "claude",
+      "display_name": "Claude Code",
+      "executable_path": null,
+      "version": "unknown",
+      "install_source": "unknown",
+      "path_status": "missing",
+      "status": "missing",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": [
+        {
+          "code": "runtime_not_found",
+          "message": "claude was not found on PATH or known install locations."
+        }
+      ]
+    }
+  ],
+  "config_sources": [
+    {
+      "id": "codex-user-config",
+      "runtime": "codex",
+      "scope": "user",
+      "path": "~/redacted/.codex/config.toml",
+      "priority": 40,
+      "format": "toml",
+      "read_policy": "read_whitelisted_fields",
+      "display_policy": "redacted_summary",
+      "write_policy": "mvp2_draft_only",
+      "validation_status": "valid",
+      "trust_status": "not_applicable",
+      "mvp_stage": "mvp1_read_only",
+      "source_reference": "https://developers.openai.com/codex/config-basic"
+    }
+  ],
+  "plugins": [],
+  "skills": [],
+  "mcp_servers": [
+    {
+      "id": "codex-github",
+      "runtime": "codex",
+      "scope": "user",
+      "transport": "stdio",
+      "command_or_url_summary": "command:npx args:2 env_fields:1",
+      "enabled": true,
+      "connection_status": "not_tested",
+      "tool_count": null,
+      "resource_count": null,
+      "template_count": null,
+      "validation_status": "valid",
+      "risk_count": 0
+    }
+  ],
+  "hooks": [],
+  "conflicts": [],
+  "risk_findings": [],
+  "summary": {
+    "runtime_count": 1,
+    "config_source_count": 1,
+    "plugin_count": 0,
+    "skill_count": 0,
+    "mcp_server_count": 1,
+    "hook_count": 0,
+    "risk_count_by_severity": {
+      "info": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "overall_status": "available",
+    "truncated": false
+  },
+  "redaction_notice": "Agent Cafe returns field names, counts, lengths, hashes, and redacted paths only. Secrets, prompts, transcripts, tool payloads, shell output, and nonce values are omitted."
+}

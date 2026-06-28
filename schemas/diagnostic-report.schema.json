@@ -291,7 +291,7 @@
         "transport": { "$ref": "#/$defs/transport" },
         "command_or_url_summary": { "type": "string", "minLength": 1, "maxLength": 500 },
         "enabled": { "type": "boolean" },
-        "connection_status": { "enum": ["not_tested", "invalid", "unknown", "available", "failed"] },
+        "connection_status": { "enum": ["not_tested", "invalid", "unknown"] },
         "tool_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
         "resource_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
         "template_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },

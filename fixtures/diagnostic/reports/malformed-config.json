@@ -1,0 +1,86 @@
+{
+  "schema_version": "agentcafe.diagnostic.v1",
+  "trace_id": "trace-fixture-malformed-config",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "runtimes": [
+    {
+      "runtime": "codex",
+      "display_name": "Codex",
+      "executable_path": "~/redacted/bin/codex",
+      "version": "0.138.0",
+      "install_source": "npm",
+      "path_status": "available",
+      "status": "available",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": []
+    },
+    {
+      "runtime": "claude",
+      "display_name": "Claude Code",
+      "executable_path": null,
+      "version": "unknown",
+      "install_source": "unknown",
+      "path_status": "missing",
+      "status": "missing",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": [
+        {
+          "code": "runtime_not_found",
+          "message": "claude was not found on PATH or known install locations."
+        }
+      ]
+    }
+  ],
+  "config_sources": [
+    {
+      "id": "codex-user-config",
+      "runtime": "codex",
+      "scope": "user",
+      "path": "~/redacted/.codex/config.toml",
+      "priority": 40,
+      "format": "toml",
+      "read_policy": "read_whitelisted_fields",
+      "display_policy": "redacted_summary",
+      "write_policy": "mvp2_draft_only",
+      "validation_status": "invalid",
+      "trust_status": "not_applicable",
+      "mvp_stage": "mvp1_read_only",
+      "source_reference": "https://developers.openai.com/codex/config-basic"
+    }
+  ],
+  "plugins": [],
+  "skills": [],
+  "mcp_servers": [],
+  "hooks": [],
+  "conflicts": [],
+  "risk_findings": [
+    {
+      "code": "config_invalid",
+      "severity": "critical",
+      "source": "config",
+      "runtime": "codex",
+      "path": "~/redacted/.codex/config.toml",
+      "message": "A configuration source could not be parsed.",
+      "redacted_evidence": null,
+      "recommended_action": "Open the configuration in the runtime's own editor and fix the syntax error before relying on merged settings."
+    }
+  ],
+  "summary": {
+    "runtime_count": 1,
+    "config_source_count": 1,
+    "plugin_count": 0,
+    "skill_count": 0,
+    "mcp_server_count": 0,
+    "hook_count": 0,
+    "risk_count_by_severity": {
+      "info": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 1
+    },
+    "overall_status": "invalid",
+    "truncated": false
+  },
+  "redaction_notice": "Agent Cafe returns field names, counts, lengths, hashes, and redacted paths only. Secrets, prompts, transcripts, tool payloads, shell output, and nonce values are omitted."
+}

@@ -207,6 +207,8 @@ UI 不应自行重新解析 `.codex`、`.claude`、plugin manifest、MCP config 
 
 ## 验收场景
 
+UI 风险等级、标题、message 和 recommended action 的默认文案见 `docs/mvp1-risk-copy.md`。UI 可以按平台微调语气，但不得把 `not_tested` 渲染为失败，不得把 MVP 2 draft 操作渲染成可点击成功路径。
+
 MVP 1 UI smoke 必须覆盖：
 
 - 无 Codex / 无 Claude。

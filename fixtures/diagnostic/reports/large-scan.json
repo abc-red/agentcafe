@@ -1,0 +1,175 @@
+{
+  "schema_version": "agentcafe.diagnostic.v1",
+  "trace_id": "trace-fixture-large-scan",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "runtimes": [
+    {
+      "runtime": "codex",
+      "display_name": "Codex",
+      "executable_path": "~/redacted/bin/codex",
+      "version": "0.138.0",
+      "install_source": "npm",
+      "path_status": "available",
+      "status": "available",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": []
+    },
+    {
+      "runtime": "claude",
+      "display_name": "Claude Code",
+      "executable_path": "~/redacted/bin/claude",
+      "version": "1.0.56",
+      "install_source": "npm",
+      "path_status": "available",
+      "status": "available",
+      "detected_at": "2026-06-28T08:00:00Z",
+      "diagnostics": []
+    }
+  ],
+  "config_sources": [
+    {
+      "id": "codex-user-config",
+      "runtime": "codex",
+      "scope": "user",
+      "path": "~/redacted/.codex/config.toml",
+      "priority": 40,
+      "format": "toml",
+      "read_policy": "read_whitelisted_fields",
+      "display_policy": "redacted_summary",
+      "write_policy": "mvp2_draft_only",
+      "validation_status": "valid",
+      "trust_status": "not_applicable",
+      "mvp_stage": "mvp1_read_only",
+      "source_reference": "https://developers.openai.com/codex/config-basic"
+    },
+    {
+      "id": "claude-user-settings",
+      "runtime": "claude",
+      "scope": "user",
+      "path": "~/redacted/.claude/settings.json",
+      "priority": 30,
+      "format": "json",
+      "read_policy": "read_whitelisted_fields",
+      "display_policy": "redacted_summary",
+      "write_policy": "mvp2_draft_only",
+      "validation_status": "valid",
+      "trust_status": "not_applicable",
+      "mvp_stage": "mvp1_read_only",
+      "source_reference": "https://docs.anthropic.com/en/docs/claude-code/settings"
+    }
+  ],
+  "plugins": [
+    {
+      "id": "plugin-sample-001",
+      "runtime": "codex",
+      "name": "sample-plugin-001",
+      "version": "0.1.0",
+      "scope": "user",
+      "source": "generated fixture summary",
+      "path": "~/redacted/.codex/plugins/sample-plugin-001/plugin.json",
+      "enabled": true,
+      "validation_status": "valid",
+      "capabilities": ["skills", "mcp", "hooks"],
+      "risk_count": 0
+    },
+    {
+      "id": "plugin-sample-100",
+      "runtime": "claude",
+      "name": "sample-plugin-100",
+      "version": "0.1.0",
+      "scope": "user",
+      "source": "generated fixture summary",
+      "path": "~/redacted/.claude/plugins/sample-plugin-100/plugin.json",
+      "enabled": true,
+      "validation_status": "valid",
+      "capabilities": ["skills"],
+      "risk_count": 0
+    }
+  ],
+  "skills": [
+    {
+      "id": "skill-sample-001",
+      "runtime": "codex",
+      "name": "sample-skill-001",
+      "description": "Generated large scan fixture skill summary.",
+      "scope": "plugin",
+      "path": "~/redacted/.codex/plugins/sample-plugin-001/skills/sample-skill-001/SKILL.md",
+      "validation_status": "valid",
+      "referenced_resource_count": 1,
+      "risk_count": 0
+    },
+    {
+      "id": "skill-sample-200",
+      "runtime": "claude",
+      "name": "sample-skill-200",
+      "description": "Generated large scan fixture skill summary.",
+      "scope": "plugin",
+      "path": "~/redacted/.claude/plugins/sample-plugin-100/skills/sample-skill-200/SKILL.md",
+      "validation_status": "valid",
+      "referenced_resource_count": 1,
+      "risk_count": 0
+    }
+  ],
+  "mcp_servers": [
+    {
+      "id": "mcp-sample-001",
+      "runtime": "codex",
+      "scope": "plugin",
+      "transport": "stdio",
+      "command_or_url_summary": "command:npx args:2",
+      "enabled": true,
+      "connection_status": "not_tested",
+      "tool_count": null,
+      "resource_count": null,
+      "template_count": null,
+      "validation_status": "valid",
+      "risk_count": 0
+    },
+    {
+      "id": "mcp-sample-050",
+      "runtime": "claude",
+      "scope": "plugin",
+      "transport": "http",
+      "command_or_url_summary": "url:https://mcp.example.invalid/redacted/050",
+      "enabled": true,
+      "connection_status": "not_tested",
+      "tool_count": null,
+      "resource_count": null,
+      "template_count": null,
+      "validation_status": "valid",
+      "risk_count": 0
+    }
+  ],
+  "hooks": [],
+  "conflicts": [],
+  "risk_findings": [
+    {
+      "code": "large_scan_summary_fixture",
+      "severity": "info",
+      "source": "fixture",
+      "runtime": null,
+      "path": null,
+      "message": "This compact report represents the large scan scenario; generator tests must expand it to 100 plugins, 200 skills, 50 MCP servers, and 1000 config-related files.",
+      "redacted_evidence": null,
+      "recommended_action": "Use this fixture for UI and contract smoke tests; use a generated fixture for performance tests."
+    }
+  ],
+  "summary": {
+    "runtime_count": 2,
+    "config_source_count": 2,
+    "plugin_count": 2,
+    "skill_count": 2,
+    "mcp_server_count": 2,
+    "hook_count": 0,
+    "risk_count_by_severity": {
+      "info": 1,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "overall_status": "available",
+    "truncated": false
+  },
+  "redaction_notice": "Agent Cafe returns field names, counts, lengths, hashes, and redacted paths only. Secrets, prompts, transcripts, tool payloads, shell output, and nonce values are omitted."
+}

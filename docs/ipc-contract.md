@@ -566,7 +566,7 @@ Result:
 }
 ```
 
-`test_connections` must remain `false` in MVP 1. Connection tests are user-triggered MVP 2 draft behavior.
+`test_connections` must remain `false` in MVP 1. Connection tests are user-triggered MVP 2 draft behavior. In `agentcafe.diagnostic.v1`, `McpServerItem.connection_status` is limited to `not_tested`, `invalid`, or `unknown`; `tool_count`, `resource_count`, and `template_count` remain `null` because MVP 1 does not perform MCP connection tests.
 
 ### `risk.scan`
 
