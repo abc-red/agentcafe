@@ -1,0 +1,323 @@
+<Window x:Class="AgentCafe.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:AgentCafe.Windows.ViewModels"
+        mc:Ignorable="d"
+        Title="Agent Café"
+        Width="1180"
+        Height="760"
+        MinWidth="980"
+        MinHeight="640"
+        Background="{StaticResource WindowBackgroundBrush}">
+  <Window.DataContext>
+    <vm:MainViewModel/>
+  </Window.DataContext>
+
+  <Window.Resources>
+    <Style x:Key="SectionPanelStyle" TargetType="Grid">
+      <Setter Property="Visibility" Value="Collapsed"/>
+    </Style>
+    <Style x:Key="CardBorderStyle" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource BorderBrushMuted}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="14"/>
+      <Setter Property="Margin" Value="0,0,12,12"/>
+    </Style>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="220"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="#111827">
+      <DockPanel LastChildFill="True" Margin="18">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+          <TextBlock Text="Agent Café" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+          <TextBlock Text="只读诊断控制台" Foreground="#AAB4C4" Margin="0,4,0,0"/>
+        </StackPanel>
+        <ListBox ItemsSource="{Binding Sections}"
+                 SelectedItem="{Binding SelectedSection}"
+                 DisplayMemberPath="Title"
+                 Foreground="#F8FAFC"
+                 Background="Transparent">
+          <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+              <Setter Property="MinHeight" Value="40"/>
+              <Setter Property="Padding" Value="10,8"/>
+              <Setter Property="Margin" Value="0,2"/>
+              <Setter Property="Foreground" Value="#E5E7EB"/>
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="ItemBorder" CornerRadius="6" Background="Transparent" Padding="{TemplateBinding Padding}">
+                      <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsSelected" Value="True">
+                        <Setter TargetName="ItemBorder" Property="Background" Value="#2563EB"/>
+                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                      </Trigger>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="ItemBorder" Property="Background" Value="#1F2937"/>
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </ListBox.ItemContainerStyle>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Column="1" Margin="24">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <Border Grid.Row="0"
+              Background="{StaticResource PanelBackgroundBrush}"
+              BorderBrush="{StaticResource BorderBrushMuted}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="16"
+              Margin="0,0,0,16">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <TextBlock Text="{Binding SelectedSection.Title}" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <Border BorderBrush="{StaticResource BorderBrushMuted}" BorderThickness="1" CornerRadius="16" Padding="10,5" Margin="0,0,10,0">
+              <TextBlock Text="{Binding ConnectionState}" Foreground="{StaticResource TextMutedBrush}"/>
+            </Border>
+            <Button Content="刷新诊断" Command="{Binding RefreshCommand}"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1">
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Overview">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <ItemsControl ItemsSource="{Binding SummaryCards}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Style="{StaticResource CardBorderStyle}" Width="180" Height="92">
+                      <StackPanel>
+                        <TextBlock Text="{Binding Label}" Foreground="{StaticResource TextMutedBrush}"/>
+                        <TextBlock Text="{Binding Value}" FontSize="28" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Last scan" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding GeneratedAtDisplay}" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                  <TextBlock Text="{Binding Report.RedactionNotice}" Foreground="{StaticResource TextMutedBrush}" Margin="0,10,0,0"/>
+                </StackPanel>
+              </Border>
+              <DataGrid ItemsSource="{Binding Runtimes}" Height="220">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Runtime" Binding="{Binding DisplayName}" Width="*"/>
+                  <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120"/>
+                  <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="140"/>
+                  <DataGridTextColumn Header="Install" Binding="{Binding InstallSource}" Width="120"/>
+                  <DataGridTextColumn Header="Path" Binding="{Binding ExecutablePath}" Width="2*"/>
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Codex">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <TextBlock Text="Codex runtime" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <DataGrid ItemsSource="{Binding CodexRuntimes}" Height="170">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120"/>
+                  <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="140"/>
+                  <DataGridTextColumn Header="Install" Binding="{Binding InstallSource}" Width="120"/>
+                  <DataGridTextColumn Header="Path" Binding="{Binding ExecutablePath}" Width="*"/>
+                </DataGrid.Columns>
+              </DataGrid>
+              <TextBlock Text="Codex config sources" FontSize="18" FontWeight="SemiBold" Margin="0,18,0,8"/>
+              <DataGrid ItemsSource="{Binding ConfigSources}" Height="320">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="180"/>
+                  <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="90"/>
+                  <DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="100"/>
+                  <DataGridTextColumn Header="Validation" Binding="{Binding ValidationStatus}" Width="120"/>
+                  <DataGridTextColumn Header="Path" Binding="{Binding Path}" Width="*"/>
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Claude">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding ClaudeRuntimes}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120"/>
+              <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="140"/>
+              <DataGridTextColumn Header="Install" Binding="{Binding InstallSource}" Width="120"/>
+              <DataGridTextColumn Header="Path" Binding="{Binding ExecutablePath}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="MCP">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding McpServers}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="180"/>
+              <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="90"/>
+              <DataGridTextColumn Header="Transport" Binding="{Binding Transport}" Width="100"/>
+              <DataGridTextColumn Header="Connection" Binding="{Binding ConnectionStatus}" Width="130"/>
+              <DataGridTextColumn Header="Validation" Binding="{Binding ValidationStatus}" Width="120"/>
+              <DataGridTextColumn Header="Summary" Binding="{Binding CommandOrUrlSummary}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Plugins">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding Plugins}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="180"/>
+              <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="90"/>
+              <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="100"/>
+              <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="90"/>
+              <DataGridTextColumn Header="Validation" Binding="{Binding ValidationStatus}" Width="120"/>
+              <DataGridTextColumn Header="Path" Binding="{Binding Path}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Skills">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding Skills}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="180"/>
+              <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="90"/>
+              <DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="100"/>
+              <DataGridTextColumn Header="Validation" Binding="{Binding ValidationStatus}" Width="120"/>
+              <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Risks">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding Risks}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" Width="100"/>
+              <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="160"/>
+              <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="90"/>
+              <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="110"/>
+              <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
+              <DataGridTextColumn Header="Recommended action" Binding="{Binding RecommendedAction}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Backups">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <DataGrid ItemsSource="{Binding BackupRows}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Capability" Binding="{Binding Name}" Width="180"/>
+              <DataGridTextColumn Header="State" Binding="{Binding State}" Width="120"/>
+              <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>
