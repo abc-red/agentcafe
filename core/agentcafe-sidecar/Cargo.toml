@@ -1,0 +1,11 @@
+[package]
+name = "agentcafe-sidecar"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+agentcafe-core = { path = "../agentcafe-core" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true

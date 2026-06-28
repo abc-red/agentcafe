@@ -1,0 +1,16 @@
+[package]
+name = "agentcafe-cli"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "agentcafe"
+path = "src/main.rs"
+
+[dependencies]
+agentcafe-core = { path = "../agentcafe-core" }
+anyhow.workspace = true
+clap.workspace = true
+jsonschema.workspace = true
+serde_json.workspace = true
