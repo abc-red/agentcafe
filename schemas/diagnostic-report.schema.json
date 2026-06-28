@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentcafe.local/schemas/diagnostic-report.schema.json",
+  "title": "Agent Cafe DiagnosticReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "trace_id",
+    "generated_at",
+    "runtimes",
+    "config_sources",
+    "plugins",
+    "skills",
+    "mcp_servers",
+    "hooks",
+    "conflicts",
+    "risk_findings",
+    "summary",
+    "redaction_notice"
+  ],
+  "properties": {
+    "schema_version": { "const": "agentcafe.diagnostic.v1" },
+    "trace_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "runtimes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/runtimeProfile" }
+    },
+    "config_sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/configSource" }
+    },
+    "plugins": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pluginItem" }
+    },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skillItem" }
+    },
+    "mcp_servers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpServerItem" }
+    },
+    "hooks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hookItem" }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflictFinding" }
+    },
+    "risk_findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/riskFinding" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "redaction_notice": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "$defs": {
+    "runtime": {
+      "enum": ["codex", "claude"]
+    },
+    "runtimeNullable": {
+      "anyOf": [{ "$ref": "#/$defs/runtime" }, { "type": "null" }]
+    },
+    "scope": {
+      "enum": [
+        "managed",
+        "system",
+        "user",
+        "profile",
+        "project",
+        "local",
+        "cli_override",
+        "plugin",
+        "unknown"
+      ]
+    },
+    "status": {
+      "enum": ["available", "missing", "disabled", "invalid", "blocked", "unknown"]
+    },
+    "severity": {
+      "enum": ["info", "low", "medium", "high", "critical"]
+    },
+    "format": {
+      "enum": ["toml", "json", "yaml", "markdown", "directory", "command", "unknown"]
+    },
+    "transport": {
+      "enum": ["stdio", "http", "sse", "websocket", "unknown"]
+    },
+    "validationStatus": {
+      "enum": ["valid", "invalid", "partial", "skipped", "unknown"]
+    },
+    "installSource": {
+      "enum": ["path", "npm", "brew", "winget", "app_bundle", "manual", "managed", "unknown"]
+    },
+    "trustStatus": {
+      "enum": ["trusted", "untrusted", "managed", "not_applicable", "unknown"]
+    },
+    "mvpStage": {
+      "enum": ["mvp1_read_only", "mvp2_write_draft", "mvp3_ecosystem_draft", "v2_draft"]
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "redactedEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "length", "sha256_12", "source_summary"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "length": { "type": "integer", "minimum": 0 },
+        "sha256_12": { "type": "string", "pattern": "^[a-f0-9]{12}$" },
+        "source_summary": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "runtimeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "display_name",
+        "executable_path",
+        "version",
+        "install_source",
+        "path_status",
+        "status",
+        "detected_at",
+        "diagnostics"
+      ],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "executable_path": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }]
+        },
+        "version": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "install_source": { "$ref": "#/$defs/installSource" },
+        "path_status": { "$ref": "#/$defs/status" },
+        "status": { "$ref": "#/$defs/status" },
+        "detected_at": { "type": "string", "format": "date-time" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      }
+    },
+    "configSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runtime",
+        "scope",
+        "path",
+        "priority",
+        "format",
+        "read_policy",
+        "display_policy",
+        "write_policy",
+        "validation_status",
+        "trust_status",
+        "mvp_stage",
+        "source_reference"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "scope": { "$ref": "#/$defs/scope" },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "priority": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "format": { "$ref": "#/$defs/format" },
+        "read_policy": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "display_policy": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "write_policy": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "validation_status": { "$ref": "#/$defs/validationStatus" },
+        "trust_status": { "$ref": "#/$defs/trustStatus" },
+        "mvp_stage": { "$ref": "#/$defs/mvpStage" },
+        "source_reference": {
+          "anyOf": [
+            { "type": "string", "format": "uri", "maxLength": 500 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "pluginItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runtime",
+        "name",
+        "version",
+        "scope",
+        "source",
+        "path",
+        "enabled",
+        "validation_status",
+        "capabilities",
+        "risk_count"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "scope": { "$ref": "#/$defs/scope" },
+        "source": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "path": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }]
+        },
+        "enabled": { "type": "boolean" },
+        "validation_status": { "$ref": "#/$defs/validationStatus" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+        },
+        "risk_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "skillItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runtime",
+        "name",
+        "description",
+        "scope",
+        "path",
+        "validation_status",
+        "referenced_resource_count",
+        "risk_count"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 500 },
+        "scope": { "$ref": "#/$defs/scope" },
+        "path": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }]
+        },
+        "validation_status": { "$ref": "#/$defs/validationStatus" },
+        "referenced_resource_count": { "type": "integer", "minimum": 0 },
+        "risk_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mcpServerItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runtime",
+        "scope",
+        "transport",
+        "command_or_url_summary",
+        "enabled",
+        "connection_status",
+        "tool_count",
+        "resource_count",
+        "template_count",
+        "validation_status",
+        "risk_count"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "scope": { "$ref": "#/$defs/scope" },
+        "transport": { "$ref": "#/$defs/transport" },
+        "command_or_url_summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "enabled": { "type": "boolean" },
+        "connection_status": { "enum": ["not_tested", "invalid", "unknown", "available", "failed"] },
+        "tool_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "resource_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "template_count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "validation_status": { "$ref": "#/$defs/validationStatus" },
+        "risk_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "hookItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runtime",
+        "scope",
+        "event",
+        "matcher",
+        "handler_type",
+        "command_summary",
+        "enabled",
+        "trust_status",
+        "validation_status",
+        "risk_count"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "scope": { "$ref": "#/$defs/scope" },
+        "event": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "matcher": { "anyOf": [{ "type": "string", "maxLength": 300 }, { "type": "null" }] },
+        "handler_type": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "command_summary": {
+          "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }]
+        },
+        "enabled": { "type": "boolean" },
+        "trust_status": { "$ref": "#/$defs/trustStatus" },
+        "validation_status": { "$ref": "#/$defs/validationStatus" },
+        "risk_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "riskFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "source",
+        "runtime",
+        "path",
+        "message",
+        "redacted_evidence",
+        "recommended_action"
+      ],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "severity": { "$ref": "#/$defs/severity" },
+        "source": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "runtime": { "$ref": "#/$defs/runtimeNullable" },
+        "path": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }]
+        },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "redacted_evidence": {
+          "anyOf": [{ "$ref": "#/$defs/redactedEvidence" }, { "type": "null" }]
+        },
+        "recommended_action": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "conflictFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "key",
+        "winning_source_id",
+        "shadowed_source_ids",
+        "explanation"
+      ],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "key": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "winning_source_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "shadowed_source_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_count",
+        "config_source_count",
+        "plugin_count",
+        "skill_count",
+        "mcp_server_count",
+        "hook_count",
+        "risk_count_by_severity",
+        "overall_status"
+      ],
+      "properties": {
+        "runtime_count": { "type": "integer", "minimum": 0 },
+        "config_source_count": { "type": "integer", "minimum": 0 },
+        "plugin_count": { "type": "integer", "minimum": 0 },
+        "skill_count": { "type": "integer", "minimum": 0 },
+        "mcp_server_count": { "type": "integer", "minimum": 0 },
+        "hook_count": { "type": "integer", "minimum": 0 },
+        "risk_count_by_severity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["info", "low", "medium", "high", "critical"],
+          "properties": {
+            "info": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 },
+            "medium": { "type": "integer", "minimum": 0 },
+            "high": { "type": "integer", "minimum": 0 },
+            "critical": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "overall_status": { "$ref": "#/$defs/status" },
+        "truncated": { "type": "boolean" }
+      }
+    }
+  }
+}
