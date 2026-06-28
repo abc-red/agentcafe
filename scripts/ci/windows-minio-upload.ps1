@@ -1,101 +1,154 @@
+[CmdletBinding()]
 param(
+    [ValidateSet("verify-minio", "upload")]
+    [string]$Action = "upload",
     [string]$LocalDir,
     [string]$ArtifactKind = "windows"
 )
 
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $versionEnvPath = Join-Path $repoRoot ".drone\version.env"
-
-if (-not (Test-Path $versionEnvPath)) {
-    throw "Missing release metadata: $versionEnvPath"
+$mcConfigDir = if ([string]::IsNullOrWhiteSpace($env:AGENTCAFE_MC_CONFIG_DIR)) {
+    "C:\build-tools\mconfig"
+} else {
+    $env:AGENTCAFE_MC_CONFIG_DIR
+}
+$mcConfigFile = Join-Path $mcConfigDir "config.json"
+$mcCommand = if ([string]::IsNullOrWhiteSpace($env:AGENTCAFE_MC_COMMAND)) {
+    "mc"
+} else {
+    $env:AGENTCAFE_MC_COMMAND
 }
 
-$metadata = @{}
-Get-Content $versionEnvPath | ForEach-Object {
-    if ($_ -match '^(?:export\s+)?([^=]+)=(.*)$') {
-        $metadata[$Matches[1]] = $Matches[2].Trim('"')
+function Invoke-Checked {
+    param(
+        [Parameter(Mandatory = $true)][string]$Command,
+        [Parameter()][object[]]$CommandArgs = @()
+    )
+
+    & $Command @CommandArgs
+    $exitCode = if (Test-Path -LiteralPath "Variable:\LASTEXITCODE") { $LASTEXITCODE } else { 0 }
+    if (-not $? -or $exitCode -ne 0) {
+        throw "Command failed: $Command $($CommandArgs -join ' ') (exit=$exitCode)"
     }
 }
 
-if (-not $metadata.ContainsKey("VERSION")) {
-    throw "VERSION is missing from $versionEnvPath"
+function Invoke-McChecked {
+    param(
+        [Parameter(Mandatory = $true)][object[]]$CommandArgs
+    )
+
+    Invoke-Checked -Command $mcCommand -CommandArgs (@("--config-dir", $mcConfigDir) + $CommandArgs)
 }
 
-if (-not $metadata.ContainsKey("MINIO_RELEASE_ROOT")) {
-    throw "MINIO_RELEASE_ROOT is missing from $versionEnvPath"
+function Invoke-McBestEffort {
+    param(
+        [Parameter(Mandatory = $true)][object[]]$CommandArgs
+    )
+
+    & $mcCommand "--config-dir" $mcConfigDir @CommandArgs
 }
 
-if (-not $LocalDir) {
-    $LocalDir = Join-Path $repoRoot "artifacts\release\$ArtifactKind"
+function Test-MinioConfig {
+    if ($null -eq (Get-Command $mcCommand -ErrorAction SilentlyContinue)) {
+        throw "mc is required to upload Windows AgentCafe artifacts."
+    }
+    if (-not (Test-Path -LiteralPath $mcConfigFile -PathType Leaf)) {
+        throw "MinIO mc config file was not found: $mcConfigFile"
+    }
+
+    Write-Host "=== verify Windows MinIO config ==="
+    Write-Host "MC_CONFIG_DIR=$mcConfigDir"
+    Write-Host "MC_CONFIG_FILE=$mcConfigFile"
+    Invoke-McChecked -CommandArgs @("ls", "feinian/devops")
 }
 
-if (-not (Test-Path $LocalDir)) {
-    Write-Host "SKIP: artifact directory does not exist: $LocalDir"
-    exit 0
-}
+function Read-VersionEnv {
+    param(
+        [Parameter(Mandatory = $true)][string]$LiteralPath
+    )
 
-$files = Get-ChildItem -Path $LocalDir -File -Recurse | Sort-Object FullName
-if (-not $files) {
-    Write-Host "SKIP: artifact directory is empty: $LocalDir"
-    exit 0
-}
+    if (-not (Test-Path -LiteralPath $LiteralPath -PathType Leaf)) {
+        throw "Missing release metadata: $LiteralPath"
+    }
 
-$localRoot = (Resolve-Path $LocalDir).Path
-$versionTarget = "$($metadata.MINIO_RELEASE_ROOT)/$($metadata.VERSION)/$ArtifactKind/"
-$latestTarget = "$($metadata.MINIO_RELEASE_ROOT)/latest/$ArtifactKind/"
+    $values = @{}
+    Get-Content -LiteralPath $LiteralPath | ForEach-Object {
+        if ($_ -match '^(?:export\s+)?([^=]+)="?([^"]*)"?$') {
+            $values[$Matches[1]] = $Matches[2]
+        }
+    }
+    return $values
+}
 
 function Get-RelativeArtifactPath {
     param(
-        [string]$FilePath
+        [Parameter(Mandatory = $true)][string]$BasePath,
+        [Parameter(Mandatory = $true)][string]$TargetPath
     )
 
-    $root = $localRoot
-    if (-not $root.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
-        $root = "$root$([System.IO.Path]::DirectorySeparatorChar)"
+    $baseFull = (Resolve-Path -LiteralPath $BasePath).ProviderPath.Replace("\", "/").TrimEnd("/")
+    $targetFull = (Resolve-Path -LiteralPath $TargetPath).ProviderPath.Replace("\", "/")
+    $prefix = "$baseFull/"
+    if (-not $targetFull.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Target path is outside artifact dir: base=$baseFull target=$targetFull"
     }
-
-    $rootUri = New-Object System.Uri($root)
-    $fileUri = New-Object System.Uri($FilePath)
-    return [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($fileUri).ToString()).Replace('\', '/')
+    return $targetFull.Substring($prefix.Length)
 }
 
-function Copy-TreeToMinio {
-    param(
-        [string]$Target
-    )
-
-    foreach ($file in $files) {
-        $relativePath = Get-RelativeArtifactPath -FilePath $file.FullName
-        mc cp $file.FullName "$Target$relativePath"
-    }
+Test-MinioConfig
+if ($Action -eq "verify-minio") {
+    Write-Host "Windows MinIO config verified."
+    exit 0
 }
 
-function Verify-RemoteTree {
-    param(
-        [string]$Target
-    )
-
-    Write-Host "=== verify uploaded files: $Target ==="
-    foreach ($file in $files) {
-        $relativePath = Get-RelativeArtifactPath -FilePath $file.FullName
-        mc stat "$Target$relativePath" | Out-Null
-        Write-Host "OK $Target$relativePath"
-    }
+$metadata = Read-VersionEnv -LiteralPath $versionEnvPath
+if ([string]::IsNullOrWhiteSpace($metadata["VERSION"])) {
+    throw "VERSION is missing from $versionEnvPath"
 }
+if ([string]::IsNullOrWhiteSpace($metadata["MINIO_RELEASE_ROOT"])) {
+    throw "MINIO_RELEASE_ROOT is missing from $versionEnvPath"
+}
+
+if ([string]::IsNullOrWhiteSpace($LocalDir)) {
+    $LocalDir = Join-Path $repoRoot "artifacts\release\$ArtifactKind"
+}
+
+if (-not (Test-Path -LiteralPath $LocalDir -PathType Container)) {
+    throw "Artifact directory does not exist: $LocalDir"
+}
+
+$files = Get-ChildItem -LiteralPath $LocalDir -File -Recurse | Sort-Object FullName
+if (-not $files) {
+    throw "Artifact directory is empty: $LocalDir"
+}
+
+$localRoot = (Resolve-Path -LiteralPath $LocalDir).ProviderPath
+$versionTarget = "$($metadata["MINIO_RELEASE_ROOT"])/$($metadata["VERSION"])/$ArtifactKind/"
+$latestTarget = "$($metadata["MINIO_RELEASE_ROOT"])/latest/$ArtifactKind/"
 
 Write-Host "=== upload artifacts to minio ==="
 Write-Host "LOCAL_DIR=$localRoot"
 Write-Host "VERSION_TARGET=$versionTarget"
 Write-Host "LATEST_TARGET=$latestTarget"
 
-mc mb -p $versionTarget 2>$null
-mc mb -p $latestTarget 2>$null
-Copy-TreeToMinio -Target $versionTarget
-Copy-TreeToMinio -Target $latestTarget
+Invoke-McBestEffort -CommandArgs @("mb", "-p", $versionTarget) | Out-Host
+Invoke-McBestEffort -CommandArgs @("mb", "-p", $latestTarget) | Out-Host
+Invoke-McBestEffort -CommandArgs @("rm", "--recursive", "--force", $latestTarget) | Out-Host
 
-Write-Host "=== uploaded files ==="
-mc ls $versionTarget
-Verify-RemoteTree -Target $versionTarget
-Verify-RemoteTree -Target $latestTarget
+foreach ($file in $files) {
+    $relativePath = Get-RelativeArtifactPath -BasePath $localRoot -TargetPath $file.FullName
+    Invoke-McChecked -CommandArgs @("cp", $file.FullName, "$versionTarget$relativePath")
+    Invoke-McChecked -CommandArgs @("cp", $file.FullName, "$latestTarget$relativePath")
+}
+
+Write-Host "=== verify uploaded files ==="
+foreach ($file in $files) {
+    $relativePath = Get-RelativeArtifactPath -BasePath $localRoot -TargetPath $file.FullName
+    Invoke-McChecked -CommandArgs @("stat", "$versionTarget$relativePath")
+    Invoke-McChecked -CommandArgs @("stat", "$latestTarget$relativePath")
+    Write-Host "OK $relativePath"
+}

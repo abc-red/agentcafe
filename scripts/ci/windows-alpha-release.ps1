@@ -1,4 +1,18 @@
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+function Invoke-Checked {
+    param(
+        [Parameter(Mandatory = $true)][string]$Command,
+        [Parameter()][object[]]$CommandArgs = @()
+    )
+
+    & $Command @CommandArgs
+    $exitCode = if (Test-Path -LiteralPath "Variable:\LASTEXITCODE") { $LASTEXITCODE } else { 0 }
+    if (-not $? -or $exitCode -ne 0) {
+        throw "Command failed: $Command $($CommandArgs -join ' ') (exit=$exitCode)"
+    }
+}
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $versionEnvPath = Join-Path $repoRoot ".drone\version.env"
@@ -25,8 +39,8 @@ $artifactDir = Join-Path $repoRoot "artifacts\release\windows"
 
 Set-Location $repoRoot
 
-cargo build -p agentcafe-sidecar --release
-dotnet publish apps/windows-wpf/AgentCafe.Windows.csproj -c Release -o $publishDir
+Invoke-Checked -Command "cargo" -CommandArgs @("build", "-p", "agentcafe-sidecar", "--release")
+Invoke-Checked -Command "dotnet" -CommandArgs @("publish", "apps/windows-wpf/AgentCafe.Windows.csproj", "-c", "Release", "-o", $publishDir)
 
 if (Test-Path $packageDir) {
     Remove-Item -Recurse -Force $packageDir
@@ -46,7 +60,7 @@ PowerShell run:
 This Alpha is read-only. It runs ipc.handshake and doctor.run only.
 MVP2 write, snapshot, restore, MCP test, Hook, Plugin, and Skill write actions are disabled.
 "@
-Set-Content -Path (Join-Path $packageDir "README.txt") -Value $readme -NoNewline
+Set-Content -Path (Join-Path $packageDir "README.txt") -Value $readme -NoNewline -Encoding ascii
 
 if (Test-Path $zipPath) {
     Remove-Item -Force $zipPath
@@ -54,7 +68,7 @@ if (Test-Path $zipPath) {
 
 Compress-Archive -Path $packageDir -DestinationPath $zipPath -Force
 $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
-Set-Content -Path $shaPath -Value "$hash  $packageName.zip"
+Set-Content -Path $shaPath -Value "$hash  $packageName.zip" -Encoding ascii
 
 if (Test-Path $artifactDir) {
     Remove-Item -Recurse -Force $artifactDir

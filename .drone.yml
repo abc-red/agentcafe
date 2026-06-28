@@ -41,6 +41,8 @@ steps:
       - node tests/integration/validate-diagnostic-fixtures.mjs
       - node tests/integration/validate-mvp2-fixtures.mjs
       - node tests/integration/validate-native-ui-contracts.mjs
+      - git diff --check
+      - if command -v jq >/dev/null 2>&1; then find . -path ./.git -prune -o -name '*.json' -print | sort | xargs -n1 jq empty; else echo 'SKIP: jq not found; JSON syntax validation skipped.'; fi
       - scripts/package-alpha.sh "$$VERSION"
       - rm -rf artifacts/release/macos
       - mkdir -p artifacts/release/macos
@@ -77,13 +79,13 @@ trigger:
 steps:
   - name: prepare-release-metadata
     commands:
-      - powershell -NoProfile -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force .drone | Out-Null; if ($$env:DRONE_TAG) { $$version = $$env:DRONE_TAG } else { $$buildId = $$env:DRONE_BUILD_NUMBER; if (-not $$buildId) { $$buildId = (Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss') }; $$version = \"v0.0.0-dev.$$buildId\" }; Set-Content -Path .drone/version.env -Value \"VERSION=$$version`nMINIO_RELEASE_ROOT=feinian/devops/agentcafe`n\" -NoNewline; Get-Content .drone/version.env"
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-version.ps1
 
   - name: verify-minio-config
     depends_on:
       - prepare-release-metadata
     commands:
-      - mc ls feinian/devops
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-minio-upload.ps1 -Action verify-minio
 
   - name: test-and-package-windows
     depends_on:
@@ -92,10 +94,12 @@ steps:
       - cargo test
       - dotnet build apps/windows-wpf/AgentCafe.Windows.csproj
       - powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-Command node -ErrorAction SilentlyContinue) { node tests/integration/validate-native-ui-contracts.mjs } else { Write-Host 'SKIP: node not found; native UI contract validation skipped on Windows runner.' }"
+      - git diff --check
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-Command jq -ErrorAction SilentlyContinue) { Get-ChildItem -Recurse -File -Filter *.json | Where-Object { $$_.FullName -notmatch '\\.git[\\/]' } | ForEach-Object { jq empty $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } } } else { Write-Host 'SKIP: jq not found; JSON syntax validation skipped.' }"
       - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-alpha-release.ps1
 
   - name: upload-windows-artifacts-to-minio
     depends_on:
       - test-and-package-windows
     commands:
-      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-minio-upload.ps1 -ArtifactKind windows
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-minio-upload.ps1 -Action upload -ArtifactKind windows
