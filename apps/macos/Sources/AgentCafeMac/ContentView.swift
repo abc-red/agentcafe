@@ -41,9 +41,15 @@ struct ContentView: View {
                 .padding(.vertical, 5)
                 .background(.quaternary, in: Capsule())
             Button {
+                viewModel.copyTraceId()
+            } label: {
+                Label("复制 Trace ID", systemImage: "doc.on.doc")
+            }
+            .disabled(viewModel.report == nil)
+            Button {
                 Task { await viewModel.refresh() }
             } label: {
-                Label("刷新诊断", systemImage: "arrow.clockwise")
+                Label(viewModel.report == nil ? "重试" : "刷新诊断", systemImage: "arrow.clockwise")
             }
             .disabled(viewModel.isLoading)
         }
@@ -77,6 +83,8 @@ struct ContentView: View {
             RiskTableView(items: viewModel.report?.riskFindings ?? [])
         case .backups:
             BackupTableView(items: viewModel.backupRows)
+        case .diagnostics:
+            DiagnosticsDetailView(viewModel: viewModel)
         }
     }
 }
@@ -256,6 +264,70 @@ private struct BackupTableView: View {
             TableColumn("Detail") { Text($0.detail).foregroundStyle(.secondary) }
         }
         .padding(20)
+    }
+}
+
+private struct DiagnosticsDetailView: View {
+    @ObservedObject var viewModel: AppViewModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
+                    DetailItem(label: "Schema", value: viewModel.report?.schemaVersion ?? "No report")
+                    DetailItem(label: "Trace ID", value: viewModel.report?.traceId ?? "No scan yet")
+                    DetailItem(label: "Generated", value: viewModel.generatedAtDisplay)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Redaction notice")
+                        .font(.headline)
+                    Text(viewModel.report?.redactionNotice ?? "No diagnostic report loaded.")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(.background, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Redacted DiagnosticReport JSON")
+                        .font(.headline)
+                    ScrollView([.horizontal, .vertical]) {
+                        Text(viewModel.diagnosticJson.isEmpty ? "No diagnostic report loaded." : viewModel.diagnosticJson)
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                    }
+                    .frame(minHeight: 360)
+                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
+                }
+            }
+            .padding(20)
+        }
+    }
+}
+
+private struct DetailItem: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.body)
+                .lineLimit(3)
+                .textSelection(.enabled)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(.background, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
     }
 }
 

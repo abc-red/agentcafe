@@ -102,7 +102,8 @@
             <Border BorderBrush="{StaticResource BorderBrushMuted}" BorderThickness="1" CornerRadius="16" Padding="10,5" Margin="0,0,10,0">
               <TextBlock Text="{Binding ConnectionState}" Foreground="{StaticResource TextMutedBrush}"/>
             </Border>
-            <Button Content="刷新诊断" Command="{Binding RefreshCommand}"/>
+            <Button Content="复制 Trace ID" Command="{Binding CopyTraceIdCommand}" Margin="0,0,8,0"/>
+            <Button Content="{Binding RetryButtonText}" Command="{Binding RefreshCommand}"/>
           </StackPanel>
         </Grid>
       </Border>
@@ -316,6 +317,66 @@
               <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="*"/>
             </DataGrid.Columns>
           </DataGrid>
+        </Grid>
+
+        <Grid>
+          <Grid.Style>
+            <Style TargetType="Grid" BasedOn="{StaticResource SectionPanelStyle}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding SelectedSection.Key}" Value="Diagnostics">
+                  <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <ItemsControl>
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <Border Style="{StaticResource CardBorderStyle}" Width="260">
+                  <StackPanel>
+                    <TextBlock Text="Schema" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Text="{Binding Report.SchemaVersion}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorderStyle}" Width="360">
+                  <StackPanel>
+                    <TextBlock Text="Trace ID" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Text="{Binding Report.TraceId}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorderStyle}" Width="260">
+                  <StackPanel>
+                    <TextBlock Text="Generated" Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Text="{Binding GeneratedAtDisplay}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                  </StackPanel>
+                </Border>
+              </ItemsControl>
+
+              <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Redaction notice" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Report.RedactionNotice}" Foreground="{StaticResource TextMutedBrush}" Margin="0,8,0,0"/>
+                </StackPanel>
+              </Border>
+
+              <TextBlock Text="Redacted DiagnosticReport JSON" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,8"/>
+              <TextBox Text="{Binding DiagnosticJson}"
+                       FontFamily="Consolas"
+                       FontSize="12"
+                       IsReadOnly="True"
+                       AcceptsReturn="True"
+                       AcceptsTab="True"
+                       TextWrapping="NoWrap"
+                       VerticalScrollBarVisibility="Auto"
+                       HorizontalScrollBarVisibility="Auto"
+                       MinHeight="380"/>
+            </StackPanel>
+          </ScrollViewer>
         </Grid>
       </Grid>
     </Grid>

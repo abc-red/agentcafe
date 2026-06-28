@@ -27,7 +27,8 @@ const requiredSections = [
   "Plugins",
   "Skills",
   "风险",
-  "备份"
+  "备份",
+  "诊断详情"
 ];
 
 const forbiddenWritableMethods = [

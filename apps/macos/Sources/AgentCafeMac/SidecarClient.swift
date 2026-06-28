@@ -2,15 +2,16 @@ import Foundation
 
 struct SidecarRunResult {
     let report: DiagnosticReport?
+    let prettyJson: String?
     let errorCode: String?
     let errorMessage: String?
 
-    static func success(_ report: DiagnosticReport) -> SidecarRunResult {
-        SidecarRunResult(report: report, errorCode: nil, errorMessage: nil)
+    static func success(_ report: DiagnosticReport, prettyJson: String) -> SidecarRunResult {
+        SidecarRunResult(report: report, prettyJson: prettyJson, errorCode: nil, errorMessage: nil)
     }
 
     static func failure(_ code: String, _ message: String) -> SidecarRunResult {
-        SidecarRunResult(report: nil, errorCode: code, errorMessage: message)
+        SidecarRunResult(report: nil, prettyJson: nil, errorCode: code, errorMessage: message)
     }
 }
 
@@ -82,7 +83,7 @@ final class SidecarClient {
             }
 
             let report = try decoder.decode(DiagnosticReport.self, from: result)
-            return .success(report)
+            return .success(report, prettyJson: Self.prettyJson(from: result))
         } catch {
             terminate(process)
             return .failure("sidecar_crash", error.localizedDescription)
@@ -93,10 +94,25 @@ final class SidecarClient {
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let report = try decoder.decode(DiagnosticReport.self, from: data)
-            return .success(report)
+            return .success(report, prettyJson: Self.prettyJson(from: data))
         } catch {
             return .failure("fixture_invalid", error.localizedDescription)
         }
+    }
+
+    private static func prettyJson(from data: Data) -> String {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: data),
+            JSONSerialization.isValidJSONObject(object),
+            let prettyData = try? JSONSerialization.data(
+                withJSONObject: object,
+                options: [.prettyPrinted, .sortedKeys]
+            ),
+            let output = String(data: prettyData, encoding: .utf8)
+        else {
+            return String(data: data, encoding: .utf8) ?? ""
+        }
+        return output
     }
 
     private func writeRequest(method: String, params: [String: Any], pipe: Pipe) throws {

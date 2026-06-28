@@ -11,12 +11,11 @@ Release candidate: `v0.1.0-mvp1-rc1`
 - 只读扫描：runtime detection、配置白名单扫描、Plugins / Skills / MCP / Hooks metadata、冲突和风险摘要。
 - Redaction：secret-like 字段只输出字段名、长度、`sha256_12`、来源摘要和脱敏路径。
 - 安全边界：不写配置、不创建 snapshot、不启动 MCP server、不执行 Hook 或 Plugin command。
+- 原生 UI：macOS SwiftUI 与 Windows WPF 只读 shell，可展示 doctor 诊断、脱敏诊断详情、trace id 复制和基础 retry。
 - 测试：Rust core / sidecar tests、diagnostic fixture validator、JSON parse validation。
 
 ## 不在 MVP 1 范围内
 
-- Windows WPF 原生 UI。
-- macOS SwiftUI 原生 UI。
 - 配置写入、diff apply、snapshot、restore。
 - MCP 连接测试、工具列表读取和外部 server 启动。
 - Hook dry-run、Hook command / URL / MCP tool / prompt / agent 执行。
@@ -32,6 +31,8 @@ MVP 1 RC 使用以下命令验证：
 cargo test
 cargo run -q -p agentcafe-cli -- doctor --json --schema schemas/diagnostic-report.schema.json > /tmp/agentcafe-doctor.json
 node tests/integration/validate-diagnostic-fixtures.mjs
+node tests/integration/validate-mvp2-fixtures.mjs
+node tests/integration/validate-native-ui-contracts.mjs
 find . -path ./.git -prune -o -name '*.json' -print | sort | xargs -n1 jq empty
 ```
 
@@ -55,7 +56,7 @@ RC 验证要求：
 
 ## 已知限制
 
-- 原生 UI 尚未接入；当前用户入口是 CLI 和 sidecar IPC。
+- 原生 UI 当前是只读 shell；尚未提供签名安装器、自动更新、完整导出报告或平台 reveal path 流程。
 - Scanner 仍遵循 MVP 1 静态/白名单能力，部分生态来源只做 metadata 或 detect-only 摘要。
 - Runtime version probing 只允许执行 runtime 的版本命令，并受 timeout 限制。
 - Large scan 性能已有覆盖基线，但不同机器和真实 workspace 仍需后续采样。

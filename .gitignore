@@ -19,3 +19,4 @@
 /apps/macos/.build/
 /apps/windows-wpf/bin/
 /apps/windows-wpf/obj/
+/dist/

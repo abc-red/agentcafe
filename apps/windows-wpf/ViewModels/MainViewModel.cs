@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using AgentCafe.Windows.Models;
 using AgentCafe.Windows.Services;
@@ -11,6 +12,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly SidecarClient _sidecarClient = new();
     private DiagnosticReport? _report;
+    private string _diagnosticJson = string.Empty;
     private SectionViewModel? _selectedSection;
     private string _connectionState = "Not connected";
     private string _statusMessage = "Ready to run a read-only diagnostic scan.";
@@ -27,10 +29,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             new("Plugins", "Plugins"),
             new("Skills", "Skills"),
             new("风险", "Risks"),
-            new("备份", "Backups")
+            new("备份", "Backups"),
+            new("诊断详情", "Diagnostics")
         };
         SelectedSection = Sections[0];
         RefreshCommand = new AsyncCommand(RefreshAsync, () => !IsLoading);
+        CopyTraceIdCommand = new RelayCommand(CopyTraceId, () => Report is not null);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -38,6 +42,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<SectionViewModel> Sections { get; }
 
     public ICommand RefreshCommand { get; }
+
+    public ICommand CopyTraceIdCommand { get; }
 
     public SectionViewModel? SelectedSection
     {
@@ -64,11 +70,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(Risks));
                 OnPropertyChanged(nameof(BackupRows));
                 OnPropertyChanged(nameof(SummaryCards));
+                OnPropertyChanged(nameof(RetryButtonText));
+                if (CopyTraceIdCommand is RelayCommand command)
+                {
+                    command.RaiseCanExecuteChanged();
+                }
             }
         }
     }
 
+    public string DiagnosticJson
+    {
+        get => _diagnosticJson;
+        private set => SetField(ref _diagnosticJson, value);
+    }
+
     public bool HasReport => Report is not null;
+
+    public string RetryButtonText => HasReport ? "刷新诊断" : "重试";
 
     public string ConnectionState
     {
@@ -160,6 +179,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (result.IsSuccess && result.Report is not null)
         {
             Report = result.Report;
+            DiagnosticJson = result.PrettyJson ?? string.Empty;
             ConnectionState = "Connected";
             StatusMessage = $"Read-only diagnostic loaded. Trace: {result.Report.TraceId}";
         }
@@ -170,6 +190,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         IsLoading = false;
+    }
+
+    private void CopyTraceId()
+    {
+        if (Report is null)
+        {
+            return;
+        }
+
+        Clipboard.SetText(Report.TraceId);
+        StatusMessage = $"Trace id copied: {Report.TraceId}";
     }
 
     private static int TotalRiskCount(DiagnosticSummary summary) =>
@@ -227,6 +258,26 @@ public sealed class AsyncCommand : ICommand
     public bool CanExecute(object? parameter) => _canExecute();
 
     public async void Execute(object? parameter) => await _execute();
+
+    public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+}
+
+public sealed class RelayCommand : ICommand
+{
+    private readonly Action _execute;
+    private readonly Func<bool> _canExecute;
+
+    public RelayCommand(Action execute, Func<bool> canExecute)
+    {
+        _execute = execute;
+        _canExecute = canExecute;
+    }
+
+    public event EventHandler? CanExecuteChanged;
+
+    public bool CanExecute(object? parameter) => _canExecute();
+
+    public void Execute(object? parameter) => _execute();
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

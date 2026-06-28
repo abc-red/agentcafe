@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using AgentCafe.Windows.Models;
 
@@ -12,6 +13,10 @@ public sealed class SidecarClient
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+    private static readonly JsonSerializerOptions PrettyJsonOptions = new()
+    {
+        WriteIndented = true
     };
 
     private readonly string _sidecarPath;
@@ -61,7 +66,7 @@ public sealed class SidecarClient
             }
 
             await SendAsync(process, "doctor.run", new { }, cancellationToken);
-            var doctor = await ReadResponseAsync<DiagnosticReport>(process, cancellationToken);
+            var doctor = await ReadDoctorResponseAsync(process, cancellationToken);
             if (!doctor.IsSuccess || doctor.Result is null)
             {
                 return SidecarRunResult<DiagnosticReport>.Failure(
@@ -69,7 +74,7 @@ public sealed class SidecarClient
                     doctor.ErrorMessage ?? "doctor.run failed.");
             }
 
-            return SidecarRunResult<DiagnosticReport>.Success(doctor.Result);
+            return SidecarRunResult<DiagnosticReport>.Success(doctor.Result, doctor.PrettyJson ?? "");
         }
         catch (OperationCanceledException)
         {
@@ -152,15 +157,40 @@ public sealed class SidecarClient
         return RpcReadResult<T>.Success(envelope!.Result);
     }
 
+    private static async Task<RpcReadResult<DiagnosticReport>> ReadDoctorResponseAsync(
+        Process process,
+        CancellationToken cancellationToken)
+    {
+        var line = await process.StandardOutput.ReadLineAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return RpcReadResult<DiagnosticReport>.Failure("sidecar_crash", "Sidecar closed stdout.");
+        }
+
+        var envelope = JsonSerializer.Deserialize<RpcEnvelope<JsonElement>>(line, JsonOptions);
+        if (envelope?.Error is not null)
+        {
+            return RpcReadResult<DiagnosticReport>.Failure(
+                envelope.Error.Data?.Code ?? "sidecar_error",
+                envelope.Error.Message);
+        }
+
+        var resultJson = envelope!.Result.GetRawText();
+        var report = JsonSerializer.Deserialize<DiagnosticReport>(resultJson, JsonOptions);
+        var prettyJson = JsonNode.Parse(resultJson)?.ToJsonString(PrettyJsonOptions) ?? resultJson;
+        return RpcReadResult<DiagnosticReport>.Success(report, prettyJson);
+    }
+
     private static async Task<SidecarRunResult<DiagnosticReport>> LoadFixtureAsync(
         string fixture,
         CancellationToken cancellationToken)
     {
         var json = await File.ReadAllTextAsync(fixture, cancellationToken);
         var report = JsonSerializer.Deserialize<DiagnosticReport>(json, JsonOptions);
+        var prettyJson = JsonNode.Parse(json)?.ToJsonString(PrettyJsonOptions) ?? json;
         return report is null
             ? SidecarRunResult<DiagnosticReport>.Failure("fixture_invalid", "Fixture did not decode.")
-            : SidecarRunResult<DiagnosticReport>.Success(report);
+            : SidecarRunResult<DiagnosticReport>.Success(report, prettyJson);
     }
 
     private static string ResolveDefaultSidecarPath()
@@ -219,17 +249,29 @@ public sealed class SidecarClient
         [property: JsonPropertyName("stage")] string? Stage
     );
 
-    private sealed record RpcReadResult<T>(bool IsSuccess, T? Result, string? ErrorCode, string? ErrorMessage)
+    private sealed record RpcReadResult<T>(
+        bool IsSuccess,
+        T? Result,
+        string? PrettyJson,
+        string? ErrorCode,
+        string? ErrorMessage)
     {
-        public static RpcReadResult<T> Success(T? result) => new(true, result, null, null);
+        public static RpcReadResult<T> Success(T? result, string? prettyJson = null) =>
+            new(true, result, prettyJson, null, null);
         public static RpcReadResult<T> Failure(string errorCode, string errorMessage) =>
-            new(false, default, errorCode, errorMessage);
+            new(false, default, null, errorCode, errorMessage);
     }
 }
 
-public sealed record SidecarRunResult<T>(bool IsSuccess, T? Report, string? ErrorCode, string? ErrorMessage)
+public sealed record SidecarRunResult<T>(
+    bool IsSuccess,
+    T? Report,
+    string? PrettyJson,
+    string? ErrorCode,
+    string? ErrorMessage)
 {
-    public static SidecarRunResult<T> Success(T report) => new(true, report, null, null);
+    public static SidecarRunResult<T> Success(T report, string prettyJson) =>
+        new(true, report, prettyJson, null, null);
     public static SidecarRunResult<T> Failure(string errorCode, string errorMessage) =>
-        new(false, default, errorCode, errorMessage);
+        new(false, default, null, errorCode, errorMessage);
 }

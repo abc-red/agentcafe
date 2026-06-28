@@ -1,9 +1,11 @@
 import Foundation
+import AppKit
 
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var selectedSection: AppSection = .overview
     @Published private(set) var report: DiagnosticReport?
+    @Published private(set) var diagnosticJson = ""
     @Published private(set) var connectionState = "Not connected"
     @Published private(set) var statusMessage = "Ready to run a read-only diagnostic scan."
     @Published private(set) var isLoading = false
@@ -54,6 +56,7 @@ final class AppViewModel: ObservableObject {
         let result = await sidecarClient.runDoctor()
         if let report = result.report {
             self.report = report
+            diagnosticJson = result.prettyJson ?? ""
             connectionState = "Connected"
             statusMessage = "Read-only diagnostic loaded. Trace: \(report.traceId)"
         } else {
@@ -62,6 +65,13 @@ final class AppViewModel: ObservableObject {
         }
 
         isLoading = false
+    }
+
+    func copyTraceId() {
+        guard let traceId = report?.traceId else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(traceId, forType: .string)
+        statusMessage = "Trace id copied: \(traceId)"
     }
 
     private func normalizeError(code: String?, message: String?) -> String {
@@ -98,6 +108,7 @@ enum AppSection: String, CaseIterable, Identifiable {
     case skills
     case risks
     case backups
+    case diagnostics
 
     var id: String { rawValue }
 
@@ -111,6 +122,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .skills: "Skills"
         case .risks: "风险"
         case .backups: "备份"
+        case .diagnostics: "诊断详情"
         }
     }
 }
