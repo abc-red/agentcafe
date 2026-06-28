@@ -1,0 +1,19 @@
+{
+  "schema_version": "agentcafe.config_apply.v1",
+  "trace_id": "trace-mvp2-apply-success",
+  "apply_id": "apply-20260628-0001",
+  "diff_id": "diff-20260628-0001",
+  "status": "applied",
+  "target": {
+    "runtime": "codex",
+    "source_id": "codex-user-config",
+    "path": "~/redacted/.codex/config.toml",
+    "format": "toml"
+  },
+  "snapshot_id": "snap-20260628-0001",
+  "validation_status": "valid",
+  "changed_source_hash_12": "f2c8d3a4b901",
+  "restore_available": true,
+  "error": null,
+  "redaction_notice": "Apply results contain status, hashes, stable codes, and redacted paths only. Snapshot payloads and secrets are omitted."
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": "agentcafe.config_diff.v1",
+  "trace_id": "trace-mvp2-diff-permission-denied",
+  "diff_id": "diff-20260628-0002",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "expires_at": "2026-06-28T08:10:00Z",
+  "target": {
+    "runtime": "claude",
+    "source_id": "claude-managed-settings",
+    "path": "~/redacted/managed-settings.json",
+    "format": "json"
+  },
+  "changes": [
+    {
+      "op": "set",
+      "field": "model",
+      "before": {
+        "kind": "redacted_summary",
+        "summary": "unknown because source could not be read"
+      },
+      "after": {
+        "kind": "redacted_summary",
+        "summary": "model alias summary"
+      },
+      "risk_codes": ["permission_denied"]
+    }
+  ],
+  "requires_snapshot": true,
+  "requires_confirmation": true,
+  "confirmation_token_hint": "Apply is blocked until the source can be read and snapshotted.",
+  "expected_source_hash_12": "000000000000",
+  "would_execute_commands": false,
+  "risk_findings": [
+    {
+      "code": "permission_denied",
+      "severity": "medium",
+      "message": "The target source could not be read with current permissions.",
+      "recommended_action": "Grant operating system permission or inspect the managed policy with an administrator."
+    }
+  ],
+  "status": "blocked",
+  "error": {
+    "code": "permission_denied",
+    "retryable": true,
+    "message": "The target source could not be read with current permissions."
+  },
+  "redaction_notice": "Diff values are summarized; secrets, prompts, transcripts, tool payloads, shell output, nonce plaintext, and snapshot payloads are omitted."
+}

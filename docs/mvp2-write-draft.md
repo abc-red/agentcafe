@@ -1,8 +1,26 @@
-# MVP 2 写入设计冻结草案
+# MVP 2 写入设计冻结规格
 
-本文档是 MVP 2 写入能力的 design freeze 起点，不进入 MVP 1 实现范围。MVP 1 可以保留方法名，但所有写入、测试和备份方法必须返回 `feature_not_in_mvp`，不得产生副作用。
+本文档冻结 MVP 2 写入能力的 contract，不进入 MVP 1 实现范围。MVP 1 可以保留方法名，但所有写入、测试和备份方法必须返回 `feature_not_in_mvp`，不得产生副作用。
 
 MVP 2 进入实现前，必须先冻结本文的 schema、确认模型和失败语义，并让 `docs/security-checklist.md` 的 MVP 2 Write Gate 全部映射到测试或人工验收证据。
+
+机器可校验 contract：
+
+- `schemas/config-diff.schema.json`
+- `schemas/config-apply.schema.json`
+- `schemas/snapshot-manifest.schema.json`
+
+验收 fixtures：
+
+- `fixtures/mvp2/diff/*.json`
+- `fixtures/mvp2/apply/*.json`
+- `fixtures/mvp2/snapshot/*.json`
+
+校验入口：
+
+```sh
+node tests/integration/validate-mvp2-fixtures.mjs
+```
 
 ## Non-Goals For MVP 1
 
@@ -33,17 +51,17 @@ MVP 2 实现前必须冻结以下 schema：
 
 ## Design Freeze Checklist
 
-MVP 2 开发开始前必须冻结：
+MVP 2 开发开始前必须冻结并通过 fixtures 校验：
 
-- `config.diff` params/result schema。
-- `config.apply` params/result schema。
-- Snapshot manifest schema。
-- Confirmation token 模型。
-- Restore 失败语义。
-- Atomic write 策略。
-- Snapshot retention 和 cleanup 策略。
-- Secret-free backup payload 策略。
-- macOS / Windows 文件权限测试策略。
+- `config.diff` params/result schema：`schemas/config-diff.schema.json` 和 `fixtures/mvp2/diff/*.json`。
+- `config.apply` result schema：`schemas/config-apply.schema.json` 和 `fixtures/mvp2/apply/*.json`。
+- Snapshot manifest schema：`schemas/snapshot-manifest.schema.json` 和 `fixtures/mvp2/snapshot/*.json`。
+- Confirmation token 模型：diff-scoped、expires_at-scoped、apply 必填。
+- Restore 失败语义：`restore_failed` 必须显式返回，不得伪造成成功。
+- Atomic write 策略：snapshot 成功后才能写入；atomic write 失败保留 restore path。
+- Snapshot retention 和 cleanup 策略：默认 20 个或 30 天。
+- Secret-free backup payload 策略：manifest 和报告不得包含 payload 内容或 secret 原文。
+- macOS / Windows 文件权限测试策略：进入实现前补平台测试。
 
 冻结要求：
 
@@ -83,6 +101,8 @@ Params rules:
 - `client_nonce_hash` is a correlation value only; nonce plaintext must not be logged or returned.
 
 ## `config.diff` Draft Result
+
+Result 必须满足 `schemas/config-diff.schema.json`。
 
 ```json
 {
@@ -138,7 +158,56 @@ Apply rules:
 - A mismatched hash returns `source_changed` and does not write.
 - Missing or invalid confirmation returns `confirmation_required` and does not write.
 
+`config.apply` result 必须满足 `schemas/config-apply.schema.json`。成功 result 见 `fixtures/mvp2/apply/apply-success.json`；失败 result 至少覆盖 `source_changed`、`atomic_write_failed` 和 `restore_failed`。
+
+`config.apply` 不接受 UI 自行构造的 target/path。sidecar 必须通过 `diff_id` 查找已冻结 diff，并在写入前重新校验 source hash。
+
+## `backup.list` Draft Result
+
+```json
+{
+  "trace_id": "trace-id",
+  "snapshots": [
+    {
+      "snapshot_id": "snap-20260628-0001",
+      "created_at": "2026-06-28T08:00:00Z",
+      "reason": "config.apply",
+      "item_count": 1,
+      "restore_status": "not_restored"
+    }
+  ]
+}
+```
+
+Rules:
+
+- List result returns manifest summaries only.
+- It must not return snapshot payload content.
+- Full manifest details must still satisfy `schemas/snapshot-manifest.schema.json`.
+
+## `backup.create` Draft Result
+
+`backup.create` returns a full snapshot manifest satisfying `schemas/snapshot-manifest.schema.json`.
+
+Rules:
+
+- MVP 2 apply flow creates snapshot automatically; manual `backup.create` remains a protected expert action.
+- Snapshot target paths must be sidecar-resolved allowlisted sources.
+- Snapshot payload storage must use app private data dir.
+
+## `backup.restore` Draft Result
+
+`backup.restore` returns an apply-style result satisfying `schemas/config-apply.schema.json`, with `status` set to `restored` or `restore_failed`.
+
+Rules:
+
+- Restore preflight must verify target path remains allowlisted.
+- Restore failure must keep `restore_available=true` when another retry may be possible.
+- Restore failure must never be returned as `applied` or `restored`.
+
 ## Snapshot Manifest Draft
+
+Manifest 必须满足 `schemas/snapshot-manifest.schema.json`。
 
 ```json
 {
@@ -209,6 +278,14 @@ Stable write failure codes:
 - `path_denied`
 - `permission_denied`
 
+Failure fixture coverage:
+
+- `fixtures/mvp2/diff/permission-denied.json`
+- `fixtures/mvp2/apply/source-changed.json`
+- `fixtures/mvp2/apply/atomic-write-failed.json`
+- `fixtures/mvp2/apply/restore-failed.json`
+- `fixtures/mvp2/snapshot/restore-failed-manifest.json`
+
 ## Confirmation Model
 
 MVP 2 write confirmation must include:
@@ -221,6 +298,23 @@ MVP 2 write confirmation must include:
 - Explicit user action from UI.
 
 The sidecar must reject `config.apply` without a confirmation token generated from the matching `config.diff` result.
+
+Confirmation token rules:
+
+- Token is generated only after a schema-valid diff with `status=ready_for_confirmation`.
+- Token binds to `diff_id`, `expected_source_hash_12`, target source id, target path, and change list digest.
+- Token expires at `expires_at`.
+- Token plaintext must not enter logs, reports, fixtures, or snapshot manifests.
+- Applying with a missing, expired, mismatched, or reused token returns `confirmation_required` or `diff_invalid` and performs no writes.
+
+## Test Evidence Required Before Implementation
+
+Before MVP 2 implementation begins:
+
+- `node tests/integration/validate-mvp2-fixtures.mjs` passes.
+- All MVP 2 fixture JSON files pass `jq empty`.
+- Security scan finds no sentinel secret or raw payload text in `fixtures/mvp2`, `schemas`, or docs examples.
+- Existing `cargo test` still passes and MVP 1 sidecar still returns `feature_not_in_mvp` for MVP 2 draft methods.
 
 ## MVP 1.5 Optional Internal Stage
 

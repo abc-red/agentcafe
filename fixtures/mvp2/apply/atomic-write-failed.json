@@ -1,0 +1,23 @@
+{
+  "schema_version": "agentcafe.config_apply.v1",
+  "trace_id": "trace-mvp2-apply-atomic-write-failed",
+  "apply_id": "apply-20260628-0003",
+  "diff_id": "diff-20260628-0001",
+  "status": "restore_available",
+  "target": {
+    "runtime": "codex",
+    "source_id": "codex-user-config",
+    "path": "~/redacted/.codex/config.toml",
+    "format": "toml"
+  },
+  "snapshot_id": "snap-20260628-0001",
+  "validation_status": "unknown",
+  "changed_source_hash_12": null,
+  "restore_available": true,
+  "error": {
+    "code": "atomic_write_failed",
+    "retryable": true,
+    "message": "The atomic write failed after a snapshot was created; restore remains available."
+  },
+  "redaction_notice": "Apply results contain status, hashes, stable codes, and redacted paths only. Snapshot payloads and secrets are omitted."
+}

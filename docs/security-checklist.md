@@ -52,15 +52,18 @@ This checklist is the release gate companion for `docs/security-model.md`. It is
 
 MVP 2 implementation work must not begin until these are designed, reviewed, and mapped to tests or explicit manual acceptance evidence:
 
-- [ ] `config.diff` params/result schema.
-- [ ] `config.apply` params/result schema.
-- [ ] Snapshot manifest schema.
-- [ ] Confirmation token model.
-- [ ] Atomic write strategy per platform.
-- [ ] Restore failure semantics.
-- [ ] Snapshot retention and cleanup policy.
-- [ ] Secret-free backup payload policy.
-- [ ] File permission tests for macOS and Windows.
+- [ ] `config.diff` params/result schema: `schemas/config-diff.schema.json` and `fixtures/mvp2/diff/*.json`.
+- [ ] `config.apply` params/result schema: `schemas/config-apply.schema.json` and `fixtures/mvp2/apply/*.json`.
+- [ ] Snapshot manifest schema: `schemas/snapshot-manifest.schema.json` and `fixtures/mvp2/snapshot/*.json`.
+- [ ] Confirmation token model: documented in `docs/mvp2-write-draft.md` and covered by apply failure fixtures.
+- [ ] Atomic write strategy per platform: documented before implementation; failure fixture `fixtures/mvp2/apply/atomic-write-failed.json`.
+- [ ] Restore failure semantics: documented before implementation; fixtures `fixtures/mvp2/apply/restore-failed.json` and `fixtures/mvp2/snapshot/restore-failed-manifest.json`.
+- [ ] Snapshot retention and cleanup policy: manifest `retention` fields validated by `schemas/snapshot-manifest.schema.json`.
+- [ ] Secret-free backup payload policy: enforced by `tests/integration/validate-mvp2-fixtures.mjs`.
+- [ ] File permission tests for macOS and Windows: required before implementation PR merge.
 - [ ] Stable write failure codes: `diff_invalid`, `confirmation_required`, `source_changed`, `snapshot_failed`, `atomic_write_failed`, `revalidate_failed`, `restore_failed`, `path_denied`, `permission_denied`.
 - [ ] Tests proving `config.apply` cannot run without a matching, unexpired `config.diff` confirmation token.
 - [ ] Tests proving snapshot manifest and write failure reports contain no secret values or raw snapshot payload.
+- [ ] `cargo test` proves MVP 1 sidecar still returns `feature_not_in_mvp` for MVP 2 draft methods until implementation begins.
+- [ ] `node tests/integration/validate-mvp2-fixtures.mjs` passes.
+- [ ] MVP 2 write methods do not automatically start MCP servers, execute Hook commands, execute Plugin commands, or call credential helpers.

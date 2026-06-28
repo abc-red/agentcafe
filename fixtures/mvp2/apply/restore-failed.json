@@ -1,0 +1,23 @@
+{
+  "schema_version": "agentcafe.config_apply.v1",
+  "trace_id": "trace-mvp2-apply-restore-failed",
+  "apply_id": "apply-20260628-0004",
+  "diff_id": "diff-20260628-0001",
+  "status": "restore_failed",
+  "target": {
+    "runtime": "codex",
+    "source_id": "codex-user-config",
+    "path": "~/redacted/.codex/config.toml",
+    "format": "toml"
+  },
+  "snapshot_id": "snap-20260628-0001",
+  "validation_status": "invalid",
+  "changed_source_hash_12": null,
+  "restore_available": true,
+  "error": {
+    "code": "restore_failed",
+    "retryable": true,
+    "message": "Restore did not complete; the failure is reported explicitly and is not treated as success."
+  },
+  "redaction_notice": "Apply results contain status, hashes, stable codes, and redacted paths only. Snapshot payloads and secrets are omitted."
+}

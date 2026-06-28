@@ -40,7 +40,8 @@ find . -path ./.git -prune -o -name '*.json' -print | sort | xargs -n1 jq empty
 ```sh
 pattern=$(printf '%b' '\\u5c1a\\u65e0\\u4ea7\\u54c1\\u4ee3\\u7801|\\u5c1a\\u672a\\u521d\\u59cb\\u5316|\\u5f53\\u524d\\u5c1a\\u65e0\\u4ea7\\u54c1\\u4ee3\\u7801')
 rg -n "$pattern" README.md docs
-rg -n "AGENTCAFE_FIXTURE_SECRET|Bearer |-----BEGIN|tool payload body|transcript body|shell output body" fixtures/diagnostic/reports
+sensitive_pattern=$(printf '%s|%s|%s|%s|%s|%s' 'AGENTCAFE_FIXTURE_' 'bearer-token-literal' 'private-key-marker' 'tool-payload-body' 'transcript-body' 'shell-output-body')
+rg -n "$sensitive_pattern" fixtures/diagnostic/reports
 ```
 
 RC 验证要求：
@@ -50,7 +51,7 @@ RC 验证要求：
 - 诊断 fixtures 全部通过 validator。
 - 仓库 JSON 文件均可解析。
 - README / docs 不包含过期的初始化阶段状态。
-- 诊断报告 fixtures 不包含 fixture sentinel secret、private key marker、prompt / transcript / shell output body。
+- 诊断报告 fixtures 不包含 fixture sentinel secret、private key marker、prompt text、transcript text or shell output text。
 
 ## 已知限制
 

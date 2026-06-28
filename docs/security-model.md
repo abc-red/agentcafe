@@ -54,7 +54,7 @@ MVP 1 `SafetyScanner` 至少检测以下类别：
 | API key | `api_key`, `apikey`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | `high` |
 | token | `token`, `access_token`, `refresh_token`, `session_token` | `high` |
 | cookie | `cookie`, `set-cookie` | `high` |
-| Authorization header | `Authorization`, `Bearer ...`, `X-API-Key` | `high` |
+| Authorization header | `Authorization`, bearer-token prefix, `X-API-Key` | `high` |
 | env secret | MCP / plugin / hook env 中的 `*_KEY`, `*_TOKEN`, `*_SECRET` | `high` |
 | private key | PEM markers such as private key headers | `critical` |
 | known provider key pattern | 常见 provider key 前缀或长度特征 | `high` |

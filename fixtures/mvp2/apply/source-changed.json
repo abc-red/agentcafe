@@ -1,0 +1,23 @@
+{
+  "schema_version": "agentcafe.config_apply.v1",
+  "trace_id": "trace-mvp2-apply-source-changed",
+  "apply_id": "apply-20260628-0002",
+  "diff_id": "diff-20260628-0001",
+  "status": "blocked",
+  "target": {
+    "runtime": "codex",
+    "source_id": "codex-user-config",
+    "path": "~/redacted/.codex/config.toml",
+    "format": "toml"
+  },
+  "snapshot_id": null,
+  "validation_status": "unknown",
+  "changed_source_hash_12": null,
+  "restore_available": false,
+  "error": {
+    "code": "source_changed",
+    "retryable": true,
+    "message": "The target source changed after the diff was generated; rerun config.diff before applying."
+  },
+  "redaction_notice": "Apply results contain status, hashes, stable codes, and redacted paths only. Snapshot payloads and secrets are omitted."
+}

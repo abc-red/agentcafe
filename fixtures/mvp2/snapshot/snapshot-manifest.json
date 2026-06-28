@@ -1,0 +1,30 @@
+{
+  "schema_version": "agentcafe.snapshot.v1",
+  "snapshot_id": "snap-20260628-0001",
+  "created_at": "2026-06-28T08:00:00Z",
+  "trace_id": "trace-mvp2-snapshot-success",
+  "reason": "config.apply",
+  "storage_policy": {
+    "location_kind": "app_private_data",
+    "path": "~/redacted/Library/Application Support/AgentCafe/snapshots/snap-20260628-0001",
+    "permissions": "current_user_read_write"
+  },
+  "items": [
+    {
+      "runtime": "codex",
+      "source_id": "codex-user-config",
+      "path": "~/redacted/.codex/config.toml",
+      "format": "toml",
+      "content_sha256_12": "2f6a19d2c0be",
+      "byte_length": 842,
+      "payload_ref": "payload-codex-user-config"
+    }
+  ],
+  "restore_status": "not_restored",
+  "restore_error": null,
+  "retention": {
+    "max_count": 20,
+    "max_age_days": 30
+  },
+  "redaction_notice": "Snapshot manifests contain redacted paths, hashes, lengths, source ids, and restore state only. Snapshot payload content is omitted."
+}

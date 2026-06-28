@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentcafe.local/schemas/config-apply.schema.json",
+  "title": "Agent Cafe ConfigApplyResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "trace_id",
+    "apply_id",
+    "diff_id",
+    "status",
+    "target",
+    "snapshot_id",
+    "validation_status",
+    "changed_source_hash_12",
+    "restore_available",
+    "error",
+    "redaction_notice"
+  ],
+  "properties": {
+    "schema_version": { "const": "agentcafe.config_apply.v1" },
+    "trace_id": { "$ref": "#/$defs/traceId" },
+    "apply_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^apply-[A-Za-z0-9._:-]+$"
+    },
+    "diff_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^diff-[A-Za-z0-9._:-]+$"
+    },
+    "status": {
+      "enum": [
+        "applied",
+        "blocked",
+        "failed",
+        "restore_available",
+        "restored",
+        "restore_failed"
+      ]
+    },
+    "target": { "$ref": "#/$defs/target" },
+    "snapshot_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^snap-[A-Za-z0-9._:-]+$"
+        },
+        { "type": "null" }
+      ]
+    },
+    "validation_status": {
+      "enum": ["valid", "invalid", "partial", "skipped", "unknown"]
+    },
+    "changed_source_hash_12": {
+      "anyOf": [{ "$ref": "#/$defs/sha256_12" }, { "type": "null" }]
+    },
+    "restore_available": { "type": "boolean" },
+    "error": {
+      "anyOf": [{ "$ref": "#/$defs/writeError" }, { "type": "null" }]
+    },
+    "redaction_notice": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "$defs": {
+    "traceId": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "runtime": { "enum": ["codex", "claude"] },
+    "format": { "enum": ["toml", "json", "yaml", "markdown", "directory", "command", "unknown"] },
+    "sha256_12": { "type": "string", "pattern": "^[a-f0-9]{12}$" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "source_id", "path", "format"],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "source_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "format": { "$ref": "#/$defs/format" }
+      }
+    },
+    "writeError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "retryable", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "diff_invalid",
+            "confirmation_required",
+            "source_changed",
+            "snapshot_failed",
+            "atomic_write_failed",
+            "revalidate_failed",
+            "restore_failed",
+            "path_denied",
+            "permission_denied"
+          ]
+        },
+        "retryable": { "type": "boolean" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    }
+  }
+}

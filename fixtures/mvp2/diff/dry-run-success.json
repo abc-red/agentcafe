@@ -1,0 +1,56 @@
+{
+  "schema_version": "agentcafe.config_diff.v1",
+  "trace_id": "trace-mvp2-diff-success",
+  "diff_id": "diff-20260628-0001",
+  "generated_at": "2026-06-28T08:00:00Z",
+  "expires_at": "2026-06-28T08:10:00Z",
+  "target": {
+    "runtime": "codex",
+    "source_id": "codex-user-config",
+    "path": "~/redacted/.codex/config.toml",
+    "format": "toml"
+  },
+  "changes": [
+    {
+      "op": "set",
+      "field": "mcp_servers.github.command",
+      "before": {
+        "kind": "missing"
+      },
+      "after": {
+        "kind": "command_summary",
+        "summary": "command:npx args:2"
+      },
+      "risk_codes": []
+    },
+    {
+      "op": "set",
+      "field": "mcp_servers.github.env.GITHUB_TOKEN",
+      "before": {
+        "kind": "missing"
+      },
+      "after": {
+        "kind": "field_presence",
+        "field": "GITHUB_TOKEN",
+        "sha256_12": "3b7d9f1a0c4e"
+      },
+      "risk_codes": ["secret_like_value"]
+    }
+  ],
+  "requires_snapshot": true,
+  "requires_confirmation": true,
+  "confirmation_token_hint": "Confirm from this exact diff before apply; token expires with expires_at.",
+  "expected_source_hash_12": "2f6a19d2c0be",
+  "would_execute_commands": false,
+  "risk_findings": [
+    {
+      "code": "secret_like_value",
+      "severity": "high",
+      "message": "A secret-like field would be configured and is represented only as presence plus hash.",
+      "recommended_action": "Prefer the runtime-supported secret mechanism before applying this change."
+    }
+  ],
+  "status": "ready_for_confirmation",
+  "error": null,
+  "redaction_notice": "Diff values are summarized; secrets, prompts, transcripts, tool payloads, shell output, nonce plaintext, and snapshot payloads are omitted."
+}

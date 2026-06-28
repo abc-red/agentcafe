@@ -743,7 +743,38 @@ MVP 1 golden sample:
 - `backup.create`
 - `backup.restore`
 
-MVP 2 实现前必须另行冻结这些方法的 params/result schema、写入确认模型、snapshot manifest 和 restore 失败语义。
+MVP 2 实现前必须另行冻结这些方法的 params/result schema、写入确认模型、snapshot manifest 和 restore 失败语义。当前冻结入口见 `docs/mvp2-write-draft.md`，机器可校验 schema 为：
+
+- `schemas/config-diff.schema.json`
+- `schemas/config-apply.schema.json`
+- `schemas/snapshot-manifest.schema.json`
+
+MVP 2 contract fixtures 位于：
+
+- `fixtures/mvp2/diff/*.json`
+- `fixtures/mvp2/apply/*.json`
+- `fixtures/mvp2/snapshot/*.json`
+
+### MVP 2 Wire Contract Preview
+
+MVP 2 写入实现启用时，以下方法使用标准 JSON-RPC `result` envelope，并继续使用整数 JSON-RPC `error.code` 与业务码 `error.data.code`：
+
+| Method | Params | Result | Stable failure codes |
+| --- | --- | --- | --- |
+| `config.diff` | target source, intent, typed changes, client nonce hash | `agentcafe.config_diff.v1` | `diff_invalid`, `path_denied`, `permission_denied` |
+| `config.apply` | `diff_id`, `confirmation_token`, `expected_source_hash_12` | `agentcafe.config_apply.v1` | `confirmation_required`, `source_changed`, `snapshot_failed`, `atomic_write_failed`, `revalidate_failed`, `path_denied`, `permission_denied` |
+| `backup.list` | optional filters | snapshot manifest summaries | `path_denied`, `permission_denied` |
+| `backup.create` | allowlisted source ids and reason | `agentcafe.snapshot.v1` | `snapshot_failed`, `path_denied`, `permission_denied` |
+| `backup.restore` | `snapshot_id`, source ids, confirmation token | `agentcafe.config_apply.v1` | `restore_failed`, `source_changed`, `path_denied`, `permission_denied` |
+
+MVP 2 写入 contract invariants:
+
+- `config.apply` must reject missing, expired, mismatched, or reused confirmation tokens before any write.
+- Snapshot creation must complete before any write.
+- Atomic write failure must report `atomic_write_failed` and keep restore evidence when a snapshot exists.
+- Restore failure must report `restore_failed`; it must never be represented as success.
+- Result payloads must not contain raw secrets, prompt text, transcript text, tool payloads, shell output, nonce plaintext, or snapshot payload content.
+- MVP 2 config write methods must not start MCP servers, execute Hook commands, execute Plugin commands, or call credential helpers.
 
 ## Timeout 与取消
 

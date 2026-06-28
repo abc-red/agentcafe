@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentcafe.local/schemas/snapshot-manifest.schema.json",
+  "title": "Agent Cafe SnapshotManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "created_at",
+    "trace_id",
+    "reason",
+    "storage_policy",
+    "items",
+    "restore_status",
+    "retention",
+    "redaction_notice"
+  ],
+  "properties": {
+    "schema_version": { "const": "agentcafe.snapshot.v1" },
+    "snapshot_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^snap-[A-Za-z0-9._:-]+$"
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "trace_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "reason": { "enum": ["config.apply", "manual_backup", "restore_preflight"] },
+    "storage_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location_kind", "path", "permissions"],
+      "properties": {
+        "location_kind": { "const": "app_private_data" },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "permissions": { "const": "current_user_read_write" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "restore_status": {
+      "enum": [
+        "not_restored",
+        "restore_succeeded",
+        "restore_failed",
+        "restore_partially_succeeded"
+      ]
+    },
+    "restore_error": {
+      "anyOf": [{ "$ref": "#/$defs/restoreError" }, { "type": "null" }]
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_count", "max_age_days"],
+      "properties": {
+        "max_count": { "type": "integer", "minimum": 1 },
+        "max_age_days": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "redaction_notice": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "$defs": {
+    "runtime": { "enum": ["codex", "claude"] },
+    "format": { "enum": ["toml", "json", "yaml", "markdown", "directory", "command", "unknown"] },
+    "sha256_12": { "type": "string", "pattern": "^[a-f0-9]{12}$" },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "source_id",
+        "path",
+        "format",
+        "content_sha256_12",
+        "byte_length",
+        "payload_ref"
+      ],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "source_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "format": { "$ref": "#/$defs/format" },
+        "content_sha256_12": { "$ref": "#/$defs/sha256_12" },
+        "byte_length": { "type": "integer", "minimum": 0 },
+        "payload_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^payload-[A-Za-z0-9._:-]+$"
+        }
+      }
+    },
+    "restoreError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "retryable", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "restore_failed",
+            "path_denied",
+            "permission_denied",
+            "source_changed"
+          ]
+        },
+        "retryable": { "type": "boolean" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    }
+  }
+}

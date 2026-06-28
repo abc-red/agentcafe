@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentcafe.local/schemas/config-diff.schema.json",
+  "title": "Agent Cafe ConfigDiff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "trace_id",
+    "diff_id",
+    "generated_at",
+    "expires_at",
+    "target",
+    "changes",
+    "requires_snapshot",
+    "requires_confirmation",
+    "confirmation_token_hint",
+    "expected_source_hash_12",
+    "would_execute_commands",
+    "risk_findings",
+    "status",
+    "redaction_notice"
+  ],
+  "properties": {
+    "schema_version": { "const": "agentcafe.config_diff.v1" },
+    "trace_id": { "$ref": "#/$defs/traceId" },
+    "diff_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^diff-[A-Za-z0-9._:-]+$"
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "target": { "$ref": "#/$defs/target" },
+    "changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/change" }
+    },
+    "requires_snapshot": { "type": "boolean" },
+    "requires_confirmation": { "type": "boolean" },
+    "confirmation_token_hint": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "expected_source_hash_12": { "$ref": "#/$defs/sha256_12" },
+    "would_execute_commands": { "const": false },
+    "risk_findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/writeRiskFinding" }
+    },
+    "status": {
+      "enum": ["ready_for_confirmation", "blocked", "invalid"]
+    },
+    "error": {
+      "anyOf": [{ "$ref": "#/$defs/writeError" }, { "type": "null" }]
+    },
+    "redaction_notice": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "$defs": {
+    "traceId": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "runtime": { "enum": ["codex", "claude"] },
+    "format": { "enum": ["toml", "json", "yaml", "markdown", "directory", "command", "unknown"] },
+    "sha256_12": { "type": "string", "pattern": "^[a-f0-9]{12}$" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "source_id", "path", "format"],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "source_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "format": { "$ref": "#/$defs/format" }
+      }
+    },
+    "redactedValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "missing",
+            "redacted_summary",
+            "command_summary",
+            "url_summary",
+            "boolean",
+            "number",
+            "field_presence",
+            "list_count"
+          ]
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "value": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "count": { "type": "integer", "minimum": 0 },
+        "field": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "sha256_12": { "$ref": "#/$defs/sha256_12" }
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "field", "before", "after", "risk_codes"],
+      "properties": {
+        "op": { "enum": ["set", "unset", "append", "remove"] },
+        "field": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "before": { "$ref": "#/$defs/redactedValue" },
+        "after": { "$ref": "#/$defs/redactedValue" },
+        "risk_codes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+        }
+      }
+    },
+    "writeRiskFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "recommended_action"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "recommended_action": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "writeError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "retryable", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "diff_invalid",
+            "confirmation_required",
+            "source_changed",
+            "snapshot_failed",
+            "atomic_write_failed",
+            "revalidate_failed",
+            "restore_failed",
+            "path_denied",
+            "permission_denied"
+          ]
+        },
+        "retryable": { "type": "boolean" },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    }
+  }
+}
