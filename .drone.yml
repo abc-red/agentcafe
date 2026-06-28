@@ -1,0 +1,101 @@
+---
+kind: pipeline
+type: exec
+name: agentcafe-macos-alpha-release
+
+node:
+  runner_name: mac-arm-build
+
+platform:
+  os: darwin
+  arch: arm64
+
+trigger:
+  event:
+    - push
+    - tag
+  ref:
+    - refs/heads/main
+    - refs/tags/v*
+
+steps:
+  - name: prepare-release-metadata
+    commands:
+      - bash scripts/ci/version.sh
+
+  - name: verify-minio-config
+    depends_on:
+      - prepare-release-metadata
+    commands:
+      - mkdir -p ~/.mc
+      - cp /Users/duke/.mc/config.json ~/.mc/config.json
+      - mc ls feinian/devops
+
+  - name: test-and-package-macos
+    depends_on:
+      - verify-minio-config
+    commands:
+      - . .drone/version.env
+      - cargo test
+      - swift build --package-path apps/macos
+      - node tests/integration/validate-diagnostic-fixtures.mjs
+      - node tests/integration/validate-mvp2-fixtures.mjs
+      - node tests/integration/validate-native-ui-contracts.mjs
+      - scripts/package-alpha.sh "$$VERSION"
+      - rm -rf artifacts/release/macos
+      - mkdir -p artifacts/release/macos
+      - cp "dist/alpha/$$VERSION/AgentCafe-macos-$$VERSION.zip" artifacts/release/macos/
+      - cp "dist/alpha/$$VERSION/AgentCafe-macos-$$VERSION.zip.sha256" artifacts/release/macos/
+
+  - name: upload-macos-artifacts-to-minio
+    depends_on:
+      - test-and-package-macos
+    commands:
+      - . .drone/version.env
+      - bash scripts/ci/minio-upload.sh artifacts/release/macos macos
+
+---
+kind: pipeline
+type: exec
+name: agentcafe-windows-alpha-release
+
+node:
+  runner_name: win-build
+
+platform:
+  os: windows
+  arch: amd64
+
+trigger:
+  event:
+    - push
+    - tag
+  ref:
+    - refs/heads/main
+    - refs/tags/v*
+
+steps:
+  - name: prepare-release-metadata
+    commands:
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force .drone | Out-Null; if ($$env:DRONE_TAG) { $$version = $$env:DRONE_TAG } else { $$buildId = $$env:DRONE_BUILD_NUMBER; if (-not $$buildId) { $$buildId = (Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss') }; $$version = \"v0.0.0-dev.$$buildId\" }; Set-Content -Path .drone/version.env -Value \"VERSION=$$version`nMINIO_RELEASE_ROOT=feinian/devops/agentcafe`n\" -NoNewline; Get-Content .drone/version.env"
+
+  - name: verify-minio-config
+    depends_on:
+      - prepare-release-metadata
+    commands:
+      - mc ls feinian/devops
+
+  - name: test-and-package-windows
+    depends_on:
+      - verify-minio-config
+    commands:
+      - cargo test
+      - dotnet build apps/windows-wpf/AgentCafe.Windows.csproj
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-Command node -ErrorAction SilentlyContinue) { node tests/integration/validate-native-ui-contracts.mjs } else { Write-Host 'SKIP: node not found; native UI contract validation skipped on Windows runner.' }"
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-alpha-release.ps1
+
+  - name: upload-windows-artifacts-to-minio
+    depends_on:
+      - test-and-package-windows
+    commands:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci/windows-minio-upload.ps1 -ArtifactKind windows
